@@ -1,0 +1,88 @@
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+
+import os
+import joblib
+
+def train_model():
+    df = pd.read_csv("data.csv")
+    df = df.dropna()
+
+    X = df[["Duration", "Pulse", "Maxpulse"]]
+    y = df["Calories"]
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    joblib.dump(model, "calorie_model.pkl")  # save model
+
+    return model
+def train_model():
+    if os.path.exists("calorie_model.pkl"):
+        print("Loading saved model...")
+        model = joblib.load("calorie_model.pkl")
+    else:
+        print("Training new model...")
+        df = pd.read_csv("data.csv")
+        df = df.dropna()
+
+        X = df[["Duration", "Pulse", "Maxpulse"]]
+        y = df["Calories"]
+
+        model = LinearRegression()
+        model.fit(X, y)
+
+        joblib.dump(model, "calorie_model.pkl")
+        print("Model saved!")
+
+    return model
+
+def get_user_input():
+    try:
+        duration = float(input("Enter workout duration (minutes): "))
+        pulse = float(input("Enter average pulse: "))
+        maxpulse = float(input("Enter max pulse: "))
+
+        if duration <= 0 or pulse <= 0 or maxpulse <= 0:
+            print("Please enter positive values only.")
+            return None
+
+        return pd.DataFrame({
+            "Duration": [duration],
+            "Pulse": [pulse],
+            "Maxpulse": [maxpulse]
+        })
+
+    except ValueError:
+        print("Invalid input. Please enter numbers only.")
+        return None
+
+def main():
+    print("Program started...")
+    model = train_model()
+
+    while True:
+        user_data = get_user_input()
+
+        if user_data is not None:
+            prediction = model.predict(user_data)
+            print("Predicted calories burned:", round(prediction[0], 2))
+
+        again = input("Do you want to try another prediction? (y/n): ").lower()
+        if again != 'y':
+            print("Goodbye! 👋")
+            break
+
+    if user_data is not None:
+        prediction = model.predict(user_data)
+        print("Predicted calories burned:", round(prediction[0], 2))
+
+        if prediction[0] < 300:
+            print("Light workout 💪")
+        elif prediction[0] < 600:
+            print("Moderate workout 🔥")
+        else:
+            print("Intense workout 🚀")
+
+if __name__ == "__main__":
+    main()
